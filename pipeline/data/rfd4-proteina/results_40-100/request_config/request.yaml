@@ -1,0 +1,57 @@
+defaults:
+- inference
+- override /recycle_strategy: medium/front_loaded
+- _self_
+hydra:
+  searchpath:
+  - file:///opt/rfd4/configs
+  run:
+    dir: /home/galileo-group/share/data/adam-data/14384/159231/hydra
+inputs: /home/galileo-group/share/data/adam-data/14384/159231/prepared/design.cif
+out_dir: /home/galileo-group/share/data/adam-data/14384/159231/native
+hf_ckpt_path: /opt/models/rfd4-proteina
+hf_ckpt_revision: null
+num_replicates: 50
+batch_size: 4
+seed: 42
+skip_existing: false
+compress_outputs: false
+delete_failing_pre_oracle: false
+num_workers: 0
+save_chain_of_interest: true
+torch_deterministic: false
+metrics_tags:
+- design
+- 3d_coordinate_conditioning
+- internal_coordinate_conditioning
+- hotspot_conditioning
+- rasa_conditioning
+- centroid_conditioning
+- interchain_interactions
+generation:
+  n_recycle_schedule:
+  - - 5
+    - 6
+  - - 10
+    - 5
+  - - 5
+    - 4
+  - - 10
+    - 3
+  - - 20
+    - 2
+  - - 10
+    - 1
+  args:
+    nsteps: 60
+    guidance_w: 1
+    save_trajectory_every: 0
+    bb_ca_only_trajectories: true
+  model:
+    bb_ca:
+      simulation_step_params:
+        tsr_k: 16
+    local_latents:
+      simulation_step_params:
+        tsr_k: 4
+compile_lengths: null

@@ -1,0 +1,4 @@
+- precision=32-true
+- nn.tri_mult_backend=torch
+- nn.attention_type=torch
+- compile_lengths=null

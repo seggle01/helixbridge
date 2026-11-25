@@ -1,0 +1,611 @@
+inference_backend: native
+bioir:
+  dtype: bfloat16
+  attention_backend: null
+  cuda_graph: true
+  cuda_graph_max_tokens: 511
+  max_graphs: null
+  match_reference_rng: false
+run_name_: inference
+verbose: false
+hf_ckpt_path: /opt/models/rfd4-proteina
+hf_ckpt_revision: null
+out_dir: /home/galileo-group/share/data/adam-data/14384/159231/native
+ckpt_name: rfd4-proteina-flow-release-2026-10-19.ckpt
+ckpt_path: ${oc.env:DATA_PATH}/flow_checkpoints
+adapter_path: null
+delete_failing_pre_oracle: false
+autoencoder_ckpt_path: ${oc.env:DATA_PATH}/ae_checkpoints/rfd4-proteina-ae-release-2026-10-19.ckpt
+num_replicates: 50
+compile_lengths: null
+nn:
+  torch_compile_mode: null
+  torch_compile_fullgraph: null
+  tri_mult_backend: torch
+  attention_type: torch
+precision: 32-true
+batch_size: 4
+subset_to_examples: null
+prevalidate_inputs: false
+seed: 42
+torch_deterministic: false
+skip_existing: false
+save_chain_of_interest: true
+compress_outputs: false
+metrics_tags:
+- design
+- 3d_coordinate_conditioning
+- internal_coordinate_conditioning
+- hotspot_conditioning
+- rasa_conditioning
+- centroid_conditioning
+- interchain_interactions
+search:
+  checkpoints: null
+  save_states: false
+  resume_from: null
+  resume_seed: null
+num_workers: 0
+hardware:
+  accelerator: gpu
+  ngpus_per_node_: 1
+  nnodes_: 1
+ncpus_: 24
+gen_njobs: 1
+eval_njobs: 1
+job_id: null
+generation:
+  n_recycle: 0
+  n_recycle_schedule:
+  - - 5
+    - 6
+  - - 10
+    - 5
+  - - 5
+    - 4
+  - - 10
+    - 3
+  - - 20
+    - 2
+  - - 10
+    - 1
+  condition_on_recycle_remaining: true
+  val_set_name_override: ${inputs}
+  args:
+    nsteps: 60
+    condition_decoder_on_sequence_prediction: true
+    guidance_w: 1
+    partial_trajectory_fraction_steps: null
+    partial_t_backbone: null
+    partial_t_latent: null
+    couple_partial_t: false
+    inverse_folding: false
+    inverse_folding_method: resampled_forward_marginal
+    save_trajectory_every: 0
+    bb_ca_only_trajectories: true
+    dump_noisy_trajectories: false
+  model:
+    bb_ca:
+      schedule:
+        mode: log
+        p: 2.0
+        tail_steps: 10
+        tail_step_multiplier: 2
+      gt:
+        mode: 1/t
+        p: 1.0
+        clamp_val: null
+      simulation_step_params:
+        sampling_mode: vf_tsr
+        sc_scale_noise: 1.0
+        t_lim_ode: 0.95
+        t_lim_ode_below: 0.02
+        center_every_step: false
+        tsr_k: 16
+        tsr_sigma: 3.0
+    local_latents:
+      schedule:
+        mode: power
+        p: 2.0
+        tail_steps: 10
+        tail_step_multiplier: 2
+      gt:
+        mode: tan
+        p: 1.0
+        clamp_val: null
+      simulation_step_params:
+        sampling_mode: vf_tsr
+        sc_scale_noise: 1.0
+        t_lim_ode: 0.95
+        t_lim_ode_below: 0.02
+        center_every_step: false
+        tsr_k: 4
+        tsr_sigma: 12.0
+  dataset:
+    num_replicates: ${num_replicates}
+    transform:
+      metrics_tags: ${metrics_tags}
+metrics:
+  inline_metrics:
+    amino_acid_composition:
+      _target_: rfproteina.metrics.amino_acid_composition.AminoAcidCompositionMetric
+      aggregation:
+      - mean
+    bond_length_metrics:
+      _target_: rfproteina.metrics.design_metrics.BondLengthMetric
+      verbose: true
+      required_tags_any:
+      - design
+      prohibited_tags:
+      - small_molecule_only
+      - structure_prediction
+    clash_metrics:
+      _target_: rfproteina.metrics.design_metrics.ClashMetric
+      threshold: 1.5
+      required_tags_any:
+      - design
+      - structure_prediction
+      prohibited_tags:
+      - small_molecule_only
+    hotspot_obedience:
+      _target_: rfproteina.metrics.hotspots.HotspotObedience
+      max_hotspot_distance: 4.5
+      required_tags_any:
+      - hotspot_conditioning
+    rasa_adherence:
+      _target_: rfproteina.metrics.rasa_metrics.RasaAdherenceMetric
+      required_tags_any:
+      - rasa_conditioning
+    centroid_conditioning_adherence:
+      _target_: rfproteina.metrics.centroid_metrics.CentroidConditioningAdherenceMetric
+      required_tags_any:
+      - centroid_conditioning
+    interchain_interactions:
+      _target_: rfproteina.metrics.interaction_metrics.InterchainInteractionMetric
+      required_tags_any:
+      - interchain_interactions
+      prohibited_tags:
+      - small_molecule_only
+      - structure_prediction
+    sequence_adherence:
+      _target_: rfproteina.metrics.sequence_adherence_metric.SequenceAdherenceMetric
+      required_tags_any:
+      - design
+    sequence_probability_adherence:
+      _target_: rfproteina.metrics.sequence_adherence_metric.SequenceProbabilityAdherenceMetric
+      required_tags_any:
+      - design
+    sse_distribution:
+      _target_: rfproteina.metrics.sse_metrics.SecondaryStructureDistribution
+      required_tags_any:
+      - design
+      prohibited_tags:
+      - small_molecule_only
+      - structure_prediction
+    sse_accuracy:
+      _target_: rfproteina.metrics.sse_metrics.SecondaryStructureAccuracy
+      required_tags_any:
+      - design
+      prohibited_tags:
+      - small_molecule_only
+      - structure_prediction
+    posebusters_metrics:
+      _target_: rfproteina.metrics.posebusters_metrics.PoseBustersMetric
+      atom_array_input_key: predicted_atom_array
+      required_tags_any:
+      - small_molecule_only
+    chiral_accuracy:
+      _target_: rfproteina.metrics.chiral_metric.ChiralAccuracy
+      subset_mask: is_ligand
+      required_tags_any:
+      - has_small_molecule
+    design_motif_allatom_rmsd:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: sa_mask('SA_CRDSRC')
+      subset_mask: sa_mask('SA_CRDSRC')
+      subdivide_by_annotation: condition_CoordinateGroup_1_atom
+      gt_coord_annotation_name: annotation_coords-with-insertion_1_atom
+      metric_type: rmsd
+      aggregation:
+      - median
+      input_kwarg_names:
+        ground_truth_atom_array: predicted_atom_array
+        predicted_atom_array: predicted_atom_array
+      required_tags_any:
+      - 3d_coordinate_conditioning
+      - unindexed
+      - internal_coordinate_conditioning
+    design_unindexed_motif_allatom_rmsd:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: sa_mask('SA_CRDSRC') & is_unindexed_insertion
+      subset_mask: sa_mask('SA_CRDSRC') & is_unindexed_insertion
+      subdivide_by_annotation: condition_CoordinateGroup_1_atom
+      gt_coord_annotation_name: annotation_coords-with-insertion_1_atom
+      metric_type: rmsd
+      aggregation:
+      - median
+      input_kwarg_names:
+        ground_truth_atom_array: predicted_atom_array
+        predicted_atom_array: predicted_atom_array
+      required_tags_all:
+      - unindexed
+    unindexed_insertion_mapping:
+      _target_: rfproteina.metrics.unindexed_insertion_metric.UnindexedInsertionMappingMetric
+      required_tags_all:
+      - unindexed
+    contact_molecular_surface:
+      _target_: rfproteina.metrics.physics.contact_ms.metric.ContactMolecularSurfaceMetric
+      required_tags_any:
+      - cms
+    sequence_similarity_to_input:
+      _target_: rfproteina.metrics.design_metrics.SequenceSimilarityToInput
+      required_tags_any:
+      - partial_diffusion
+    ca_rmsd_to_input:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: is_protein & (atom_name == 'CA')
+      subset_mask: is_protein & (atom_name == 'CA')
+      metric_type: rmsd
+      aggregation:
+      - median
+      required_tags_any:
+      - partial_diffusion
+    cath_metric:
+      _target_: rfproteina.metrics.cath_metric.CathMetric
+      required_tags_any:
+      - cath
+      annotator: foldseek_with_fallback
+    structure_prediction_lddt:
+      _target_: rfproteina.metrics.lddt_metric.AllAtomLDDT
+      predicted_atom_array_key: predicted_atom_array
+      ground_truth_atom_array_key: ground_truth_atom_array
+      required_tags_any:
+      - structure_prediction
+    sequence_developability:
+      _target_: rfproteina.metrics.physics.developability_metrics.SequenceDevelopabilityMetric
+      required_tags_any:
+      - developability
+      prohibited_tags:
+      - small_molecule_only
+      - structure_prediction
+    rosetta_developability:
+      _target_: rfproteina.metrics.physics.developability_metrics.RosettaDevelopabilityMetric
+      required_tags_any:
+      - developability
+      prohibited_tags:
+      - small_molecule_only
+      - structure_prediction
+      sasa_cutoff: 20.0
+    antibody_contacts:
+      _target_: rfproteina.metrics.antibody_metrics.AntibodyContacts
+      required_tags_any:
+      - antibody
+      contact_threshold: 7.0
+  refolding_oracles:
+    oracle:
+      _target_: rfproteina.metrics.oracles.af3_oracle.AF3Oracle
+      oracle_name: af3
+      aggregation:
+      - median
+      frac_under_thresholds:
+        min_ipae_coi:
+        - 1
+        - 1.5
+        - 2
+      required_tags_any:
+      - af3_refolding
+      - unconditional_refolding
+      - motif_scaffold_refolding
+      - internal_coordinate_motif_scaffold_refolding
+      - sm_binder_refolding
+      - ame_refolding
+      - ame_no_ligand_refolding
+      - ame_original_benchmark_refolding
+      - disco_refolding
+    oracle_ppi:
+      _target_: rfproteina.metrics.oracles.af3_oracle.AF3Oracle
+      oracle_name: af3_ppi
+      template_query: (sa_mask('C_CRD') | sa_mask('C_INTCRD')) & is_protein
+      aggregation:
+      - median
+      frac_under_thresholds:
+        min_ipae_coi:
+        - 1
+        - 1.5
+        - 2
+      required_tags_any:
+      - ppi_refolding
+      - antibody
+    oracle_dna:
+      _target_: rfproteina.metrics.oracles.af3_oracle.AF3Oracle
+      oracle_name: af3_dna
+      template_query: sa_mask('C_CRD') & ~is_nucleic_acid
+      aggregation:
+      - median
+      frac_under_thresholds:
+        min_ipae_coi:
+        - 1
+        - 1.5
+        - 2
+      required_tags_any:
+      - dna_refolding
+    oracle_apo:
+      _target_: rfproteina.metrics.oracles.af3_oracle.AF3Oracle
+      oracle_name: af3_apo
+      aggregation:
+      - median
+      pre_oracle_transform:
+        _target_: rfproteina.metrics.oracles.pre_oracle_transform.ApoOnlyTransform
+      required_tags_any:
+      - apo_refolding
+  refolding_metrics:
+    refolded_backbone_rmsd:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: is_protein_backbone
+      subset_mask: is_protein_backbone
+      metric_type: rmsd
+      aggregation:
+      - median
+      required_tags_any:
+      - unconditional_refolding
+      - ppi_refolding
+      - antibody
+      - dna_refolding
+      - motif_scaffold_refolding
+      - internal_coordinate_motif_scaffold_refolding
+      - sm_binder_refolding
+      - ame_refolding
+      - ame_no_ligand_refolding
+      - ame_original_benchmark_refolding
+      - disco_refolding
+      required_tags_all:
+      - is_refold:untransformed
+    refolded_target_aligned_binder_rmsd:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: ~is_chain_of_interest & (sa_mask('C_CRD') | is_dna)
+      subset_mask: is_chain_of_interest & is_protein
+      metric_type: rmsd
+      aggregation:
+      - median
+      required_tags_any:
+      - ppi_refolding
+      - dna_refolding
+      - antibody
+      required_tags_all:
+      - is_refold:untransformed
+    refolded_target_backbone_aligned_binder_rmsd:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: ~is_chain_of_interest & sa_mask('C_CRD') & is_protein_backbone
+      subset_mask: is_chain_of_interest & is_protein
+      metric_type: rmsd
+      aggregation:
+      - median
+      required_tags_any:
+      - ppi_refolding
+      required_tags_all:
+      - is_refold:untransformed
+    refolded_motif_allatom_rmsd:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: sa_mask('SA_CRDSRC') & is_protein
+      subset_mask: sa_mask('SA_CRDSRC') & is_protein
+      subdivide_by_annotation: condition_CoordinateGroup_1_atom
+      gt_coord_annotation_name: annotation_coords-with-insertion_1_atom
+      metric_type: rmsd
+      aggregation:
+      - median
+      required_tags_any:
+      - motif_scaffold_refolding
+      - internal_coordinate_motif_scaffold_refolding
+      - ame_refolding
+      - ame_no_ligand_refolding
+      - ame_original_benchmark_refolding
+      required_tags_all:
+      - is_refold:untransformed
+    refolded_motif_ca_rmsd:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: sa_mask('SA_CRDSRC') & is_protein & (atom_name == 'CA')
+      subset_mask: sa_mask('SA_CRDSRC') & is_protein & (atom_name == 'CA')
+      subdivide_by_annotation: condition_CoordinateGroup_1_atom
+      gt_coord_annotation_name: annotation_coords-with-insertion_1_atom
+      metric_type: rmsd
+      aggregation:
+      - median
+      required_tags_any:
+      - motif_scaffold_refolding
+      - internal_coordinate_motif_scaffold_refolding
+      required_tags_all:
+      - is_refold:untransformed
+    refolded_backbone_aligned_ligand_rmsd:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: is_protein_backbone
+      subset_mask: is_ligand
+      metric_type: rmsd
+      aggregation:
+      - median
+      required_tags_any:
+      - sm_binder_refolding
+      required_tags_all:
+      - is_refold:untransformed
+    refolded_apo_holo_rmsd:
+      _target_: rfproteina.metrics.gt_structure_comparison.StructureComparisonMetric
+      align_mask: is_protein_backbone & ~sa_mask('C_CRD')
+      subset_mask: is_protein_backbone & ~sa_mask('C_CRD')
+      metric_type: rmsd
+      aggregation:
+      - median
+      input_kwarg_names:
+        ground_truth_atom_array: refold.apo
+        predicted_atom_array: refold.untransformed
+      required_tags_all:
+      - is_refold:apo
+      - exists_refold:untransformed
+    max_ligand_centroid_distance:
+      _target_: rfproteina.metrics.gt_structure_comparison.LigandCentroidDistanceMetric
+      align_mask: is_protein_backbone
+      aggregation: max
+      required_tags_any:
+      - disco_refolding
+      required_tags_all:
+      - is_refold:untransformed
+  pass_criteria:
+    unconditional:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        refolded_backbone_rmsd.rmsd:
+          max: 1.5
+      required_tags_any:
+      - unconditional_refolding
+    ppi:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        oracle_ppi.ptm_coi:
+          min: 80.0
+        oracle_ppi.min_ipae_coi:
+          max: 1.5
+        refolded_target_backbone_aligned_binder_rmsd.rmsd:
+          max: 2.5
+      required_tags_any:
+      - ppi_refolding
+    antibody:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        oracle_ppi.min_ipae_coi:
+          max: 2.0
+        refolded_target_aligned_binder_rmsd.rmsd:
+          max: 2.0
+      required_tags_any:
+      - antibody
+    dna:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        oracle_dna.min_ipae_coi:
+          max: 1.5
+        refolded_target_aligned_binder_rmsd.rmsd:
+          max: 8.0
+      required_tags_any:
+      - dna_refolding
+    motif_scaffold:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        refolded_backbone_rmsd.rmsd:
+          max: 2.0
+        refolded_motif_allatom_rmsd.rmsd:
+          max: 2.0
+        refolded_motif_ca_rmsd.rmsd:
+          max: 1.0
+      required_tags_any:
+      - motif_scaffold_refolding
+    internal_coords:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds: ${metrics.pass_criteria.motif_scaffold.metric_thresholds}
+      required_tags_any:
+      - internal_coordinate_motif_scaffold_refolding
+    sm_binder:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        oracle.min_ipae_coi:
+          max: 1.5
+        oracle.iptm_coi:
+          min: 80.0
+        refolded_backbone_rmsd.rmsd:
+          max: 1.5
+        refolded_backbone_aligned_ligand_rmsd.rmsd:
+          max: 5.0
+      required_tags_any:
+      - sm_binder_refolding
+    ame:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        oracle.min_ipae_coi:
+          max_exclusive: 1.5
+        refolded_backbone_rmsd.rmsd:
+          max: 2.0
+        refolded_motif_allatom_rmsd.rmsd:
+          max: 1.5
+        clash_metrics.frac_atoms_clashing_inter_residue_polymer_ligand_1p5A:
+          max: 0
+      required_tags_any:
+      - ame_refolding
+      prohibited_tags:
+      - no_ligand
+    ame_no_ligand:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        refolded_backbone_rmsd.rmsd:
+          max: 2.0
+        refolded_motif_allatom_rmsd.rmsd:
+          max: 1.5
+      required_tags_any:
+      - ame_refolding
+      required_tags_all:
+      - no_ligand
+    disco:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        refolded_backbone_rmsd.rmsd:
+          max: 2.0
+        max_ligand_centroid_distance.ligand_centroid_distance:
+          max: 2.0
+      required_tags_any:
+      - disco_refolding
+    developability:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        rosetta_developability.sap_score:
+          max: 50.0
+        rosetta_developability.hydrophobic_exposure_sasa:
+          max: 1500.0
+        sequence_developability.gravy:
+          max: 0.1
+        sequence_developability.instability_index:
+          max: 40.0
+      required_tags_any:
+      - developability
+  pre_oracle_filters:
+    unknown_residue_filter:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        amino_acid_composition.n_generated_unknown_residues:
+          max: 0
+    sequence_adherence_filter:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      required_tags_any:
+      - design
+      metric_thresholds:
+        sequence_adherence.n_violations:
+          max: 0
+    unindexed_insertion_mapping_filter:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      required_tags_all:
+      - unindexed
+      metric_thresholds:
+        unindexed_insertion_mapping.n_unmapped_tokens:
+          max: 0
+        unindexed_insertion_mapping.n_sequence_mismatches:
+          max: 0
+    insertion_rmsd_filter:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        unindexed_metrics.insertion_rmsd:
+          max: 1.0
+      required_tags_all:
+      - unindexed
+      - insertion_rmsd_filter
+    motif_rmsd_filter:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      required_tags_all:
+      - motif_rmsd_filter
+      metric_thresholds:
+        motif_rmsd.rmsd:
+          max: 1.0
+    ligand_clash_filter:
+      _target_: rfproteina.metrics.oracles.pass_criterion_metric.PassCriterionMetric
+      metric_thresholds:
+        clash_metrics.frac_atoms_clashing_inter_residue_polymer_ligand_1p5A:
+          max: 0
+      required_tags_all:
+      - ligand_clash_filter
+      prohibited_tags:
+      - no_ligand
+inputs: /home/galileo-group/share/data/adam-data/14384/159231/prepared/design.cif
+global_prefix: null

@@ -1,0 +1,42 @@
+{
+  "design": {
+    "input": "/home/galileo-group/share/data/adam-data/14384/159081/prepared/source.cif",
+    "input_as_annotated_cif": false,
+    "contig": "55-55, /0, A1-219",
+    "conditions": {
+      "C_SEQ": {
+        "true": [
+          {
+            "select": "sel('A')"
+          }
+        ]
+      },
+      "C_CRDGRP": {
+        "1": [
+          {
+            "select": "sel('A/*/*/[N,CA,C,O]')"
+          }
+        ]
+      },
+      "C_HOT": {
+        "true": [
+          {
+            "select": "sel('A/*/80/CD1')"
+          },
+          {
+            "select": "sel('A/*/104/OG1')"
+          },
+          {
+            "select": "sel('A/*/139/CD1')"
+          },
+          {
+            "select": "sel('A/*/191/NE2')"
+          },
+          {
+            "select": "sel('A/*/192/OH')"
+          }
+        ]
+      }
+    }
+  }
+}

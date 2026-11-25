@@ -1,0 +1,66 @@
+{
+  "operation": "generate",
+  "input_mode": "structure",
+  "monomer_length": 20,
+  "contig": "40-100, /0, A1-219",
+  "conditions": [
+    {
+      "annotation": "C_SEQ",
+      "selection": "sel('A')",
+      "value": "true"
+    },
+    {
+      "annotation": "C_CRDGRP",
+      "selection": "sel('A/*/*/[N,CA,C,O]')",
+      "value": "1"
+    },
+    {
+      "annotation": "C_HOT",
+      "selection": "sel('A/*/80/CD1')",
+      "value": "true"
+    },
+    {
+      "annotation": "C_HOT",
+      "selection": "sel('A/*/104/OG1')",
+      "value": "true"
+    },
+    {
+      "annotation": "C_HOT",
+      "selection": "sel('A/*/139/CD1')",
+      "value": "true"
+    },
+    {
+      "annotation": "C_HOT",
+      "selection": "sel('A/*/191/NE2')",
+      "value": "true"
+    },
+    {
+      "annotation": "C_HOT",
+      "selection": "sel('A/*/192/OH')",
+      "value": "true"
+    }
+  ],
+  "num_designs": 50,
+  "batch_size": 4,
+  "steps": 60,
+  "seed": 42,
+  "recycle_strategy": "medium/front_loaded",
+  "compile_model": false,
+  "deterministic": false,
+  "partial_fraction": null,
+  "partial_t_backbone": null,
+  "partial_t_latent": null,
+  "guidance_weight": 1,
+  "sampling_mode": "stochastic",
+  "backbone_temperature": 16,
+  "latent_temperature": 4,
+  "metrics_profile": "geometry",
+  "search_enabled": false,
+  "search_objective": "hbond",
+  "beam_width": 1,
+  "search_branches": 1,
+  "trajectory_interval": 0,
+  "all_atom_trajectory": false,
+  "save_chain_of_interest": true,
+  "vhh_hotspots": false
+}
